@@ -1,5 +1,14 @@
 # AI Multi-Agent Workflow
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue?logo=python" alt="Python">
+  <img src="https://img.shields.io/badge/LangChain-0.3-green" alt="LangChain">
+  <img src="https://img.shields.io/badge/OpenAI-GPT--4o--mini-brightgreen" alt="OpenAI">
+  <img src="https://img.shields.io/badge/FastAPI-0.115-teal?logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Streamlit-1.43-red?logo=streamlit" alt="Streamlit">
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
+</p>
+
 A multi-agent collaborative workflow system built with **LangChain + OpenAI**. It orchestrates multiple specialized AI agents to work together on complex tasks through a structured pipeline.
 
 ## 🤖 Agent Roles
@@ -117,6 +126,18 @@ ai-multi-agent-workflow/
 4. **Extensible**: Easy to add new agent roles or workflow patterns
 5. **Flexible Orchestration**: Both standard and fully custom workflow modes
 
+## 🚀 Related AI Projects
+
+Check out my other AI agent projects:
+
+| Project | Description |
+|---------|-------------|
+| [AI Customer Support Agent](https://github.com/BOWang-hu/ai-customer-support-agent) | Intelligent customer service chatbot with order tracking and FAQ |
+| [AI RAG Knowledge Agent](https://github.com/BOWang-hu/ai-rag-knowledge-agent) | Document Q&A using RAG with Chroma vector database |
+| [AI Code Review Agent](https://github.com/BOWang-hu/ai-code-review-agent) | Automated code review combining static analysis with AI |
+
+---
+
 ## 📄 License
 
-MIT
+MIT — feel free to use, modify, and distribute.
