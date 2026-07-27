@@ -103,48 +103,74 @@ class WorkflowResult:
 # ===== Agent 执行器 =====
 
 class AgentExecutor:
-    """单个 Agent 执行器"""
+    """Individual Agent Executor with retry support."""
 
     def __init__(self, role: AgentRole):
         self.role = role
         profile = ROLE_PROFILES[role]
         self.name = profile["name"]
+        self.max_retries = 3
 
     async def execute(self, task_description: str, context: str = "") -> str:
-        """执行任务"""
-        if not settings.is_api_key_set:
-            return f"[{self.name} 模拟输出] 关于「{task_description[:30]}...」的分析结果。请配置 API Key。"
+        """Execute the agent's task with retry logic.
 
-        try:
-            llm = ChatOpenAI(
-                model=settings.openai_model_name,
-                temperature=0.7,
-                api_key=settings.openai_api_key,
-                base_url=settings.openai_base_url,
+        Args:
+            task_description: Description of the task to perform
+            context: Optional context from previous agents
+
+        Returns:
+            The agent's output text
+        """
+        if not settings.is_api_key_set:
+            return (
+                f"[{self.name} Mock Output] Analysis for '{task_description[:50]}...'. "
+                f"Configure API Key for real results."
             )
 
-            profile = ROLE_PROFILES[self.role]
-            system_prompt = profile["prompt"]
+        last_error = ""
+        for attempt in range(self.max_retries):
+            try:
+                llm = ChatOpenAI(
+                    model=settings.openai_model_name,
+                    temperature=0.7,
+                    api_key=settings.openai_api_key,
+                    base_url=settings.openai_base_url,
+                )
 
-            if context:
-                prompt = ChatPromptTemplate.from_messages([
-                    ("system", system_prompt),
-                    ("human", "## 上下文/研究材料\n{context}\n\n## 任务\n{task}"),
-                ])
-            else:
-                prompt = ChatPromptTemplate.from_messages([
-                    ("system", system_prompt),
-                    ("human", "## 任务\n{task}"),
-                ])
+                profile = ROLE_PROFILES[self.role]
+                system_prompt = profile["prompt"]
 
-            chain = prompt | llm | StrOutputParser()
-            result = await chain.ainvoke({"task": task_description, "context": context})
+                if context:
+                    prompt = ChatPromptTemplate.from_messages([
+                        ("system", system_prompt),
+                        ("human", "## Context / Research Material\n{context}\n\n## Task\n{task}"),
+                    ])
+                else:
+                    prompt = ChatPromptTemplate.from_messages([
+                        ("system", system_prompt),
+                        ("human", "## Task\n{task}"),
+                    ])
 
-            return result
+                chain = prompt | llm | StrOutputParser()
+                result = await chain.ainvoke(
+                    {"task": task_description, "context": context}
+                )
 
-        except Exception as e:
-            logger.error(f"Agent {self.name} 执行失败: {e}")
-            return f"[{self.name} 执行出错] {str(e)}"
+                return result
+
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(
+                    f"Agent {self.name} attempt {attempt + 1}/{self.max_retries} failed: {e}"
+                )
+                if attempt < self.max_retries - 1:
+                    import asyncio
+                    wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                    logger.info(f"Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+
+        logger.error(f"Agent {self.name} failed after {self.max_retries} attempts: {last_error}")
+        return f"[{self.name} Error after {self.max_retries} retries] {last_error}"
 
 
 # ===== 工作流引擎 =====
